@@ -39,6 +39,23 @@ export default class HTML5History {
 
   go (path, replace, append) {
     const url = this.formatPath(path, append)
+    // handle iOS DOM Exception 18
+    try {
+      this.changeState(url, replace)
+    } catch (e) {
+      window.location = url
+    }
+    const hashMatch = path.match(hashRE)
+    const hash = hashMatch && hashMatch[0]
+    path = url
+      // strip hash so it doesn't mess up params
+      .replace(hashRE, '')
+      // remove root before matching
+      .replace(this.rootRE, '')
+    this.onChange(path, null, hash)
+  }
+
+  changeState (url, replace) {
     if (replace) {
       history.replaceState({}, '', url)
     } else {
@@ -52,14 +69,6 @@ export default class HTML5History {
       // then push new state
       history.pushState({}, '', url)
     }
-    const hashMatch = path.match(hashRE)
-    const hash = hashMatch && hashMatch[0]
-    path = url
-      // strip hash so it doesn't mess up params
-      .replace(hashRE, '')
-      // remove root before matching
-      .replace(this.rootRE, '')
-    this.onChange(path, null, hash)
   }
 
   formatPath (path, append) {
